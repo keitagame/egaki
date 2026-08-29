@@ -3,5 +3,5 @@ services:
     name: egaki
     plan: free
     runtime: python
-    buildCommand: pip install "fastapi[standard]"
+    buildCommand: pip install "fastapi[standard]"　websockets
     startCommand: python server.py
