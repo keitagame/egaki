@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: egaki
+    plan: free
+    runtime: python
+    buildCommand: pip install "fastapi[standard]"
+    startCommand: python server.py
