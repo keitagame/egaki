@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>おえかき当てっこ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Yomogi&family=Zen+Maru+Gothic:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap');
+
+  :root{
+    --paper:#FFFBF0;
+    --paper-line:#E8E0CC;
+    --ink:#2B2B2B;
+    --ink-soft:#6b6459;
+    --accent:#E85D4E;
+    --accent-dark:#c94636;
+    --green:#4A7C59;
+    --blue:#3B6BA5;
+    --yellow:#F2C14E;
+    --card:#FFFFFF;
+    --shadow: 4px 4px 0 rgba(43,43,43,0.12);
+    --radius: 18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--paper-line) 1px, transparent 1px) 0 0/100% 32px,
+      var(--paper);
+    color:var(--ink);
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px 60px;
+  }
+  h1,h2,h3{ font-family:'Zen Maru Gothic', sans-serif; margin:0; }
+  .brand{
+    font-family:'Yomogi', cursive;
+    font-size:42px;
+    color:var(--ink);
+    margin-bottom:4px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .brand .pencil{ font-size:34px; transform:rotate(-18deg); display:inline-block;}
+  .tagline{ color:var(--ink-soft); font-size:13px; margin-bottom:28px; letter-spacing:.04em;}
+
+  .card{
+    background:var(--card);
+    border:2.5px solid var(--ink);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:28px;
+    width:100%;
+    max-width:520px;
+    margin-bottom:20px;
+  }
+  .wide{ max-width:760px; }
+
+  label{ font-size:13px; color:var(--ink-soft); font-weight:700; display:block; margin-bottom:6px;}
+  input[type=text]{
+    width:100%;
+    padding:12px 14px;
+    border:2px solid var(--ink);
+    border-radius:10px;
+    font-size:16px;
+    font-family:inherit;
+    background:var(--paper);
+    color:var(--ink);
+    margin-bottom:16px;
+  }
+  input[type=text]:focus{ outline:3px solid var(--yellow); outline-offset:1px;}
+
+  button{
+    font-family:'Zen Maru Gothic', sans-serif;
+    font-weight:700;
+    font-size:15px;
+    padding:13px 22px;
+    border-radius:12px;
+    border:2.5px solid var(--ink);
+    background:var(--yellow);
+    color:var(--ink);
+    cursor:pointer;
+    box-shadow:3px 3px 0 var(--ink);
+    transition:transform .08s ease;
+  }
+  button:hover{ transform:translate(-1px,-1px); }
+  button:active{ transform:translate(2px,2px); box-shadow:0 0 0 var(--ink); }
+  button:disabled{ opacity:.4; cursor:not-allowed; box-shadow:none; transform:none;}
+  button.primary{ background:var(--accent); color:#fff; }
+  button.green{ background:var(--green); color:#fff; }
+  button.blue{ background:var(--blue); color:#fff; }
+  button.ghost{ background:var(--card); }
+  button.small{ padding:8px 14px; font-size:13px; box-shadow:2px 2px 0 var(--ink);}
+  .btn-row{ display:flex; gap:10px; flex-wrap:wrap; }
+
+  .mode-select{ display:flex; gap:14px; margin-bottom:18px; }
+  .mode-box{
+    flex:1; border:2.5px solid var(--ink); border-radius:14px; padding:16px;
+    cursor:pointer; text-align:center; background:var(--paper);
+    transition:.12s;
+  }
+  .mode-box.active{ background:var(--yellow); box-shadow:3px 3px 0 var(--ink);}
+  .mode-box .emoji{ font-size:30px; display:block; margin-bottom:6px;}
+  .mode-box .name{ font-family:'Zen Maru Gothic'; font-weight:900; }
+  .mode-box .desc{ font-size:11px; color:var(--ink-soft); margin-top:4px;}
+
+  .room-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:12px 14px; border:2px solid var(--ink); border-radius:12px; margin-bottom:8px;
+    background:var(--paper);
+  }
+  .room-row .code{ font-family:'Yomogi'; font-size:20px; }
+  .pill{ font-size:11px; padding:3px 10px; border-radius:999px; border:1.5px solid var(--ink); background:#fff;}
+
+  .hidden{ display:none !important; }
+
+  /* ---- game screen ---- */
+  .topbar{
+    display:flex; justify-content:space-between; align-items:center;
+    width:100%; max-width:760px; margin-bottom:16px; flex-wrap:wrap; gap:10px;
+  }
+  .code-badge{
+    font-family:'Yomogi'; font-size:20px; background:var(--card);
+    border:2px solid var(--ink); border-radius:10px; padding:6px 14px;
+  }
+  .players-strip{ display:flex; gap:8px; flex-wrap:wrap; }
+  .player-chip{
+    font-size:12px; padding:5px 10px; border-radius:999px; border:1.5px solid var(--ink);
+    background:#fff; display:flex; align-items:center; gap:5px;
+  }
+  .player-chip.answerer{ background:var(--accent); color:#fff; }
+  .player-chip .host-star{ color:var(--accent); }
+
+  .score-banner{
+    display:flex; justify-content:center; gap:24px; align-items:center; margin-bottom:14px;
+  }
+  .team-score{ text-align:center; }
+  .team-score .num{ font-family:'Yomogi'; font-size:44px; line-height:1; }
+  .team-score .lbl{ font-size:12px; color:var(--ink-soft); font-weight:700;}
+  .vs{ font-family:'Yomogi'; font-size:22px; color:var(--ink-soft); }
+  .lead-flag{ font-size:11px; background:var(--yellow); border:1.5px solid var(--ink); border-radius:999px; padding:2px 10px; margin-top:4px; display:inline-block; }
+
+  .phase-title{ text-align:center; margin-bottom:6px; font-size:22px; }
+  .phase-sub{ text-align:center; color:var(--ink-soft); font-size:13px; margin-bottom:18px; }
+
+  .topic-target{
+    text-align:center; font-family:'Yomogi'; font-size:30px;
+    background:var(--card); border:2.5px dashed var(--ink); border-radius:14px;
+    padding:20px; margin-bottom:16px;
+  }
+
+  #canvasWrap{ display:flex; flex-direction:column; align-items:center; gap:12px; }
+  canvas{
+    background:#fff; border:2.5px solid var(--ink); border-radius:14px;
+    box-shadow:var(--shadow); touch-action:none; cursor:crosshair; max-width:100%;
+  }
+  .tools{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; justify-content:center; }
+  .color-dot{
+    width:26px; height:26px; border-radius:50%; border:2px solid var(--ink); cursor:pointer;
+  }
+  .color-dot.selected{ outline:3px solid var(--yellow); outline-offset:2px; }
+
+  .timer-ring{ position:relative; width:64px; height:64px; }
+  .timer-ring svg{ transform:rotate(-90deg); }
+  .timer-ring .num{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:'Yomogi'; font-size:22px;
+  }
+
+  .reveal-canvas-wrap img{
+    background:#fff; border:2.5px solid var(--ink); border-radius:14px; box-shadow:var(--shadow);
+    max-width:100%; display:block; margin:0 auto;
+  }
+  .reveal-name{ text-align:center; font-weight:700; margin-top:10px; margin-bottom:16px; }
+
+  .guess-history{ margin-top:14px; }
+  .guess-item{
+    padding:8px 12px; border-radius:10px; margin-bottom:6px; font-size:14px;
+    border:1.5px solid var(--ink); background:#fff;
+  }
+  .guess-item.correct{ background:var(--green); color:#fff; }
+  .guess-item.wrong{ background:#fff2ee; }
+
+  .result-box{ text-align:center; }
+  .result-box .big{ font-size:26px; font-family:'Zen Maru Gothic'; font-weight:900; margin-bottom:8px;}
+  .result-box .correct-color{ color:var(--green); }
+  .result-box .wrong-color{ color:var(--accent); }
+
+  footer{ margin-top:auto; color:var(--ink-soft); font-size:11px; padding-top:30px; text-align:center;}
+  #errorToast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--ink); color:#fff; padding:10px 20px; border-radius:10px; font-size:13px;
+    box-shadow:0 4px 12px rgba(0,0,0,.25); z-index:999;
+  }
+</style>
+</head>
+<body>
+
+<div class="brand"><span class="pencil">✏️</span>おえかき当てっこ</div>
+<div class="tagline">お題を描いて、伝えて、当てろ！</div>
+
+<!-- ============ LOBBY SCREEN ============ -->
+<div id="screen-lobby">
+  <div class="card">
+    <h2 style="margin-bottom:16px;">遊びかたを選ぶ</h2>
+    <div class="mode-select">
+      <div class="mode-box active" id="modeBoxSolo" onclick="selectMode('solo')">
+        <span class="emoji">👥</span>
+        <div class="name">個人戦</div>
+        <div class="desc">1部屋・3人以上</div>
+      </div>
+      <div class="mode-box" id="modeBoxTeam" onclick="selectMode('team')">
+        <span class="emoji">⚔️</span>
+        <div class="name">チーム戦</div>
+        <div class="desc">部屋 vs 部屋・5点先取</div>
+      </div>
+    </div>
+
+    <label>ニックネーム</label>
+    <input type="text" id="nameInput" placeholder="なまえを入力" maxlength="16" />
+
+    <div class="btn-row">
+      <button class="primary" onclick="createRoom()">部屋を作る</button>
+      <button class="ghost" onclick="showJoinBox()">コードで参加</button>
+    </div>
+
+    <div id="joinBox" class="hidden" style="margin-top:16px;">
+      <label>ルームコード</label>
+      <input type="text" id="joinCodeInput" placeholder="例）AB12C" maxlength="5" style="text-transform:uppercase;" />
+      <button class="primary" onclick="joinRoom()">参加する</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:12px;">公開中のルーム</h3>
+    <div id="roomList" style="font-size:13px; color:var(--ink-soft);">読み込み中…</div>
+    <button class="ghost small" style="margin-top:10px;" onclick="fetchRooms()">更新</button>
+  </div>
+</div>
+
+<!-- ============ IN-ROOM (waiting) ============ -->
+<div id="screen-waiting" class="hidden">
+  <div class="card wide">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2>部屋 <span id="waitCode" style="font-family:'Yomogi';"></span></h2>
+      <span class="pill" id="waitModeLabel"></span>
+    </div>
+    <p style="color:var(--ink-soft); font-size:13px;" id="waitHint">友だちにルームコードを共有してね。3人以上集まったらゲームを始められます。</p>
+    <div id="waitPlayers" class="players-strip" style="margin:16px 0;"></div>
+    <div id="teamMatchingBox" class="hidden" style="text-align:center; padding:14px; border:2px dashed var(--ink); border-radius:12px; margin-bottom:14px;">
+      対戦相手を探しています…
+    </div>
+    <button class="primary" id="startBtn" onclick="startGame()">ゲームを始める</button>
+    <p style="font-size:11px; color:var(--ink-soft); margin-top:10px;">※ ホスト（最初の参加者）だけが開始できます</p>
+  </div>
+</div>
+
+<!-- ============ GAME SCREEN ============ -->
+<div id="screen-game" class="hidden">
+  <div class="topbar">
+    <div class="code-badge" id="gameCodeBadge"></div>
+    <div class="players-strip" id="gamePlayers"></div>
+  </div>
+
+  <div id="teamScoreBanner" class="score-banner hidden">
+    <div class="team-score">
+      <div class="num" id="myScore">0</div>
+      <div class="lbl">じぶんのチーム</div>
+      <div class="lead-flag hidden" id="myLeadFlag">先攻</div>
+    </div>
+    <div class="vs">VS</div>
+    <div class="team-score">
+      <div class="num" id="oppScore">0</div>
+      <div class="lbl">相手チーム</div>
+      <div class="lead-flag hidden" id="oppLeadFlag">先攻</div>
+    </div>
+  </div>
+
+  <!-- topic submit -->
+  <div id="phase-topic_submit" class="card wide hidden">
+    <div class="phase-title">🖊 お題を決めよう</div>
+    <div id="topicAsAnswerer" class="hidden">
+      <p class="phase-sub">あなたは今回の回答者です。他のメンバーがお題を決めるまで待ちましょう。</p>
+    </div>
+    <div id="topicAsDrawer" class="hidden">
+      <p class="phase-sub">回答者にはナイショで、みんなが絵に描くお題を決めてください（1人が決めればOK）</p>
+      <input type="text" id="topicInput" placeholder="例）ペンギン、花火大会、宿題…" maxlength="40" />
+      <button class="primary" onclick="submitTopic()">このお題にする</button>
+    </div>
+    <div id="topicAsWaitTeamTurn" class="hidden">
+      <p class="phase-sub">相手チームがお題を決めています…</p>
+    </div>
+  </div>
+
+  <!-- drawing -->
+  <div id="phase-drawing" class="card wide hidden">
+    <div class="phase-title">✏️ お題を絵にしよう</div>
+    <div class="topic-target" id="drawingTopicShown"></div>
+    <div id="answererWaitingDraw" class="hidden" style="text-align:center; color:var(--ink-soft); padding:20px;">
+      みんなが絵を描いています。しばらくお待ちください…
+    </div>
+    <div id="canvasWrap">
+      <div class="timer-ring">
+        <svg width="64" height="64">
+          <circle cx="32" cy="32" r="27" stroke="#E8E0CC" stroke-width="6" fill="none"/>
+          <circle id="timerCircle" cx="32" cy="32" r="27" stroke="#E85D4E" stroke-width="6" fill="none"
+            stroke-dasharray="169.6" stroke-dashoffset="0" stroke-linecap="round"/>
+        </svg>
+        <div class="num" id="timerNum">30</div>
+      </div>
+      <canvas id="drawCanvas" width="480" height="360"></canvas>
+      <div class="tools">
+        <div class="color-dot selected" style="background:#2B2B2B" onclick="setColor('#2B2B2B',this)"></div>
+        <div class="color-dot" style="background:#E85D4E" onclick="setColor('#E85D4E',this)"></div>
+        <div class="color-dot" style="background:#3B6BA5" onclick="setColor('#3B6BA5',this)"></div>
+        <div class="color-dot" style="background:#4A7C59" onclick="setColor('#4A7C59',this)"></div>
+        <div class="color-dot" style="background:#F2C14E" onclick="setColor('#F2C14E',this)"></div>
+        <button class="ghost small" onclick="clearCanvas()">🧹 消す</button>
+        <button class="primary small" onclick="submitDrawing()" id="submitDrawBtn">この絵で決定</button>
+      </div>
+      <p id="drawSubmittedMsg" class="hidden" style="color:var(--green); font-weight:700;">✔ 送信しました。他のメンバーを待っています…</p>
+    </div>
+  </div>
+
+  <!-- reveal -->
+  <div id="phase-reveal" class="card wide hidden">
+    <div class="phase-title">👀 みんなの絵</div>
+    <p class="phase-sub" id="revealCounter"></p>
+    <div class="reveal-canvas-wrap">
+      <img id="revealImg" src="" width="480" height="360" />
+    </div>
+    <div class="reveal-name" id="revealName"></div>
+    <div style="text-align:center;">
+      <button class="primary" id="revealNextBtn" onclick="nextReveal()">次へ</button>
+    </div>
+  </div>
+
+  <!-- guessing -->
+  <div id="phase-guessing" class="card wide hidden">
+    <div class="phase-title">🤔 これは何？</div>
+    <div id="guessAsAnswerer" class="hidden">
+      <input type="text" id="guessInput" placeholder="答えを入力" />
+      <div class="btn-row">
+        <button class="primary" onclick="submitGuess()">回答する</button>
+        <button class="ghost" onclick="giveUp()">降参する</button>
+      </div>
+    </div>
+    <div id="guessAsWatcher" class="hidden">
+      <p class="phase-sub">回答者が答えています…</p>
+    </div>
+    <div class="guess-history" id="guessHistory"></div>
+  </div>
+
+  <!-- result -->
+  <div id="phase-result" class="card wide hidden">
+    <div class="result-box">
+      <div class="big" id="resultTitle"></div>
+      <p id="resultTopic" style="margin-bottom:18px;"></p>
+      <button class="primary" id="resultNextBtn" onclick="nextAfterResult()">次のラウンドへ</button>
+    </div>
+  </div>
+
+  <!-- game over (team) -->
+  <div id="phase-game_over" class="card wide hidden">
+    <div class="result-box">
+      <div class="big" id="gameOverTitle">🎉 決着！</div>
+      <p id="gameOverSub"></p>
+      <button class="primary" onclick="location.reload()">ロビーに戻る</button>
+    </div>
+  </div>
+</div>
+
+<div id="errorToast" class="hidden"></div>
+
+<footer>Python (FastAPI + WebSocket) 製 オンラインパーティーゲーム</footer>
+
+<script>
+let ws = null;
+let myPlayerId = null;
+let myRoomCode = null;
+let selectedMode = 'solo';
+let latestState = null;
+let drawColor = '#2B2B2B';
+let drawing = false;
+let ctx = null;
+let submittedDrawingThisRound = false;
+let timerInterval = null;
+
+// ---------------- Lobby ----------------
+function selectMode(m){
+  selectedMode = m;
+  document.getElementById('modeBoxSolo').classList.toggle('active', m==='solo');
+  document.getElementById('modeBoxTeam').classList.toggle('active', m==='team');
+}
+function showJoinBox(){
+  document.getElementById('joinBox').classList.remove('hidden');
+}
+function showError(msg){
+  const t = document.getElementById('errorToast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  setTimeout(()=>t.classList.add('hidden'), 3000);
+}
+
+async function fetchRooms(){
+  const res = await fetch('/api/rooms');
+  const data = await res.json();
+  const el = document.getElementById('roomList');
+  if(data.rooms.length === 0){ el.textContent = '現在募集中のルームはありません'; return; }
+  el.innerHTML = '';
+  data.rooms.forEach(r=>{
+    const div = document.createElement('div');
+    div.className = 'room-row';
+    div.innerHTML = `<span class="code">${r.code}</span>
+      <span class="pill">${r.mode==='solo'?'個人戦':'チーム戦'} / ${r.players}人</span>
+      <button class="small" onclick="quickJoin('${r.code}')">参加</button>`;
+    el.appendChild(div);
+  });
+}
+function quickJoin(code){
+  document.getElementById('joinCodeInput').value = code;
+  showJoinBox();
+  joinRoom();
+}
+fetchRooms();
+setInterval(fetchRooms, 5000);
+
+async function createRoom(){
+  const name = document.getElementById('nameInput').value.trim();
+  if(!name){ showError('ニックネームを入力してください'); return; }
+  const res = await fetch('/api/create_room', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({mode: selectedMode, name})
+  });
+  const data = await res.json();
+  if(data.error){ showError(data.error); return; }
+  connectRoom(data.room_code, data.player_id);
+}
+async function joinRoom(){
+  const name = document.getElementById('nameInput').value.trim();
+  const code = document.getElementById('joinCodeInput').value.trim().toUpperCase();
+  if(!name){ showError('ニックネームを入力してください'); return; }
+  if(!code){ showError('ルームコードを入力してください'); return; }
+  const res = await fetch('/api/join_room', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({room_code: code, name})
+  });
+  const data = await res.json();
+  if(data.error){ showError(data.error); return; }
+  connectRoom(data.room_code, data.player_id);
+}
+
+function connectRoom(roomCode, playerId){
+  myRoomCode = roomCode;
+  myPlayerId = playerId;
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}/ws/${roomCode}/${playerId}`);
+  ws.onmessage = (ev)=>{
+    const msg = JSON.parse(ev.data);
+    if(msg.type === 'state'){ render(msg.state); }
+    else if(msg.type === 'error'){ showError(msg.message); }
+  };
+  ws.onclose = ()=>{ showError('接続が切れました'); };
+  document.getElementById('screen-lobby').classList.add('hidden');
+}
+
+function send(obj){ if(ws && ws.readyState===1) ws.send(JSON.stringify(obj)); }
+
+function startGame(){ send({action:'start_game'}); }
+
+// ---------------- Render ----------------
+function render(state){
+  latestState = state;
+  const isWaiting = state.phase === 'lobby' || state.phase === 'matching';
+  document.getElementById('screen-waiting').classList.toggle('hidden', !isWaiting);
+  document.getElementById('screen-game').classList.toggle('hidden', isWaiting);
+
+  if(isWaiting){ renderWaiting(state); return; }
+
+  document.getElementById('gameCodeBadge').textContent = state.code;
+  renderPlayerStrip(document.getElementById('gamePlayers'), state);
+
+  const teamMode = state.mode === 'team';
+  document.getElementById('teamScoreBanner').classList.toggle('hidden', !teamMode);
+  if(teamMode){
+    document.getElementById('myScore').textContent = state.team_score;
+    document.getElementById('oppScore').textContent = state.opp_score ?? '?';
+    document.getElementById('myLeadFlag').classList.toggle('hidden', !state.is_leading_team);
+    document.getElementById('oppLeadFlag').classList.toggle('hidden', state.is_leading_team);
+  }
+
+  ['topic_submit','drawing','reveal','guessing','result','game_over'].forEach(p=>{
+    document.getElementById('phase-'+p).classList.add('hidden');
+  });
+  const activeEl = document.getElementById('phase-'+state.phase);
+  if(activeEl) activeEl.classList.remove('hidden');
+
+  if(state.phase === 'topic_submit') renderTopicSubmit(state);
+  else if(state.phase === 'drawing') renderDrawing(state);
+  else if(state.phase === 'reveal') renderReveal(state);
+  else if(state.phase === 'guessing') renderGuessing(state);
+  else if(state.phase === 'result') renderResult(state);
+  else if(state.phase === 'game_over') renderGameOver(state);
+}
+
+function renderWaiting(state){
+  document.getElementById('waitCode').textContent = state.code;
+  document.getElementById('waitModeLabel').textContent = state.mode==='solo' ? '個人戦' : 'チーム戦';
+  renderPlayerStrip(document.getElementById('waitPlayers'), state);
+  const me = state.players.find(p=>p.id===myPlayerId);
+  document.getElementById('startBtn').classList.toggle('hidden', !(me && me.is_host));
+  document.getElementById('teamMatchingBox').classList.toggle('hidden', state.phase !== 'matching');
+  if(state.phase === 'matching'){
+    document.getElementById('startBtn').classList.add('hidden');
+  }
+  document.getElementById('startBtn').disabled = state.players.length < 3;
+}
+
+function renderPlayerStrip(el, state){
+  el.innerHTML = '';
+  state.players.forEach(p=>{
+    const chip = document.createElement('span');
+    chip.className = 'player-chip' + (p.id === state.answerer_id ? ' answerer' : '');
+    chip.innerHTML = (p.is_host ? '<span class="host-star">★</span> ' : '') + p.name + (p.id===state.answerer_id ? ' 🕵️' : '');
+    el.appendChild(chip);
+  });
+}
+
+function renderTopicSubmit(state){
+  const amAnswerer = myPlayerId === state.answerer_id;
+  document.getElementById('topicAsAnswerer').classList.toggle('hidden', !amAnswerer);
+  let canPickTopic = !amAnswerer;
+  if(state.mode === 'team'){
+    canPickTopic = canPickTopic && state.is_leading_team;
+  }
+  document.getElementById('topicAsDrawer').classList.toggle('hidden', !canPickTopic);
+  document.getElementById('topicAsWaitTeamTurn').classList.toggle('hidden',
+    !(state.mode==='team' && !state.is_leading_team && !amAnswerer));
+}
+function submitTopic(){
+  const t = document.getElementById('topicInput').value.trim();
+  if(!t){ showError('お題を入力してください'); return; }
+  send({action:'submit_topic', topic: t});
+  document.getElementById('topicInput').value = '';
+}
+
+function renderDrawing(state){
+  submittedDrawingThisRound = false;
+  const amAnswerer = myPlayerId === state.answerer_id;
+  document.getElementById('answererWaitingDraw').classList.toggle('hidden', !amAnswerer);
+  document.getElementById('canvasWrap').classList.toggle('hidden', amAnswerer);
+  document.getElementById('drawingTopicShown').textContent = amAnswerer ? '？？？（あなたは回答者です）' : (state.topic || 'お題を確認中…');
+  if(!amAnswerer){
+    setupCanvasIfNeeded();
+    document.getElementById('drawSubmittedMsg').classList.add('hidden');
+    document.getElementById('submitDrawBtn').classList.remove('hidden');
+  }
+  startTimerDisplay(state.draw_seconds_left);
+}
+
+function startTimerDisplay(secLeft){
+  if(secLeft == null) return;
+  clearInterval(timerInterval);
+  let s = secLeft;
+  const circle = document.getElementById('timerCircle');
+  const total = 30;
+  function update(){
+    document.getElementById('timerNum').textContent = s;
+    const frac = Math.max(0, s/total);
+    circle.setAttribute('stroke-dashoffset', (169.6 * (1-frac)).toFixed(1));
+    if(s <= 0){ clearInterval(timerInterval); return; }
+    s -= 1;
+  }
+  update();
+  timerInterval = setInterval(update, 1000);
+}
+
+function setupCanvasIfNeeded(){
+  const canvas = document.getElementById('drawCanvas');
+  if(canvas.dataset.ready) { return; }
+  canvas.dataset.ready = '1';
+  ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.lineWidth = 4;
+
+  function pos(e){
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width/rect.width, scaleY = canvas.height/rect.height;
+    const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return {x: cx*scaleX, y: cy*scaleY};
+  }
+  function start(e){ drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); }
+  function move(e){ if(!drawing) return; const p=pos(e); ctx.strokeStyle=drawColor; ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); }
+  function end(){ drawing=false; }
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  window.addEventListener('mouseup', end);
+  canvas.addEventListener('touchstart', start, {passive:false});
+  canvas.addEventListener('touchmove', move, {passive:false});
+  canvas.addEventListener('touchend', end);
+}
+function setColor(c, el){
+  drawColor = c;
+  document.querySelectorAll('.color-dot').forEach(d=>d.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function clearCanvas(){
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,ctx.canvas.width, ctx.canvas.height);
+}
+function submitDrawing(){
+  if(submittedDrawingThisRound) return;
+  const canvas = document.getElementById('drawCanvas');
+  const data = canvas.toDataURL('image/png');
+  send({action:'submit_drawing', image: data});
+  submittedDrawingThisRound = true;
+  document.getElementById('drawSubmittedMsg').classList.remove('hidden');
+  document.getElementById('submitDrawBtn').classList.add('hidden');
+}
+
+let revealCache = {};
+function renderReveal(state){
+  const amAnswerer = myPlayerId === state.answerer_id;
+  document.getElementById('revealCounter').textContent = `${state.reveal_index+1} / ${state.drawings_count} 枚目`;
+  document.getElementById('revealNextBtn').classList.toggle('hidden', !amAnswerer);
+  // 画像は state に含まれないため drawings 詳細を別途要求する代わりに、
+  // reveal_index に応じてサーバーから送られる drawings スナップショットを使う
+  if(state.current_drawing){
+    document.getElementById('revealImg').src = state.current_drawing.image_data || '';
+    document.getElementById('revealName').textContent = state.current_drawing.player_name + ' さんの絵';
+  }
+}
+function nextReveal(){ send({action:'next_reveal'}); }
+
+function renderGuessing(state){
+  const amAnswerer = myPlayerId === state.answerer_id;
+  document.getElementById('guessAsAnswerer').classList.toggle('hidden', !amAnswerer);
+  document.getElementById('guessAsWatcher').classList.toggle('hidden', amAnswerer);
+  const hist = document.getElementById('guessHistory');
+  hist.innerHTML = '';
+  (state.guess_history||[]).forEach(g=>{
+    const div = document.createElement('div');
+    div.className = 'guess-item ' + (g.correct ? 'correct':'wrong');
+    div.textContent = (g.correct ? '✔ ' : '✘ ') + g.text;
+    hist.appendChild(div);
+  });
+}
+function submitGuess(){
+  const v = document.getElementById('guessInput').value.trim();
+  if(!v) return;
+  send({action:'submit_guess', guess: v});
+  document.getElementById('guessInput').value = '';
+}
+function giveUp(){ send({action:'give_up'}); }
+
+function renderResult(state){
+  const lastGuess = (state.guess_history||[]).slice(-1)[0];
+  const correct = lastGuess && lastGuess.correct;
+  const title = document.getElementById('resultTitle');
+  if(correct){
+    title.textContent = '🎉 正解！';
+    title.className = 'big correct-color';
+  } else {
+    title.textContent = '😢 不正解…';
+    title.className = 'big wrong-color';
+  }
+  document.getElementById('resultTopic').textContent = `お題は「${state.topic || ''}」でした`;
+  const btn = document.getElementById('resultNextBtn');
+  const me = state.players.find(p=>p.id===myPlayerId);
+  btn.classList.toggle('hidden', !(me && me.is_host));
+  btn.textContent = state.mode === 'team' ? '次の手番へ' : '次のラウンドへ';
+}
+function nextAfterResult(){
+  if(latestState && latestState.mode === 'team'){
+    send({action:'team_next_topic_phase'});
+  } else {
+    send({action:'next_round'});
+  }
+}
+
+function renderGameOver(state){
+  const win = state.team_score >= 5;
+  document.getElementById('gameOverTitle').textContent = win ? '🎉 あなたのチームの勝利！' : '💧 相手チームの勝利…';
+  document.getElementById('gameOverSub').textContent = `最終スコア ${state.team_score} - ${state.opp_score ?? '?'}`;
+}
+</script>
+</body>
+</html>
